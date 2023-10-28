@@ -104,6 +104,32 @@ var staticSuites = []ginkgo.TestSuite{
 		Parallelism: 30,
 	},
 	{
+		Name: "openshift/external",
+		Description: templates.LongDesc(`
+		Platform External tests.
+		`),
+		Matches: func(name string) bool {
+			if isDisabled(name) {
+				return false
+			}
+			return strings.Contains(name, "[Suite:openshift/external]")
+		},
+		Parallelism: 30,
+	},
+	{
+		Name: "openshift/external/conformance",
+		Description: templates.LongDesc(`
+		Platform External tests included in Conformance.
+		`),
+		Matches: func(name string) bool {
+			if isDisabled(name) {
+				return false
+			}
+			return strings.Contains(name, "[Suite:openshift/external]") && strings.Contains(name, "[Conformance]")
+		},
+		Parallelism: 30,
+	},
+	{
 		Name: "openshift/build",
 		Description: templates.LongDesc(`
 		Tests that exercise the OpenShift build functionality.
