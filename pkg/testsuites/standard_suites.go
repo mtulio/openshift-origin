@@ -112,7 +112,7 @@ var staticSuites = []ginkgo.TestSuite{
 			if isDisabled(name) {
 				return false
 			}
-			return strings.Contains(name, "[Suite:openshift/external]")
+			return inExternalSuite(name)
 		},
 		Parallelism: 30,
 	},
@@ -125,7 +125,7 @@ var staticSuites = []ginkgo.TestSuite{
 			if isDisabled(name) {
 				return false
 			}
-			return strings.Contains(name, "[Suite:openshift/external]") && strings.Contains(name, "[Conformance]")
+			return inExternalConformanceSuite(name)
 		},
 		Parallelism: 30,
 	},
