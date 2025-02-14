@@ -436,4 +436,24 @@ var staticSuites = []ginkgo.TestSuite{
 		},
 		TestTimeout: 30 * time.Minute,
 	},
+	{
+		Name: "openshift/installer",
+		Description: templates.LongDesc(`
+		This test suite verifies that resources created by installer are in conformance with the desired variation.
+
+		Tests in suite openshift/installer must validate only resources created exclusively by installer and not managed by other component.
+		Ideally must have validations which isn't detected and impacted in the cluster installation.
+		It is not allowed to validate resources created or managed by other components.
+		`),
+		Matches: func(name string) bool {
+			if isDisabled(name) {
+				return false
+			}
+			return strings.Contains(name, "[Suite:openshift/installer")
+		},
+		// etcd's restore test can take a while for apiserver rollouts to stabilize
+		Parallelism:                5,
+		TestTimeout:                30 * time.Minute,
+		ClusterStabilityDuringTest: ginkgo.Disruptive,
+	},
 }
