@@ -7,16 +7,19 @@ import (
 	"debug/elf"
 	"encoding/json"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"os/exec"
+	"os/signal"
 	"path"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
+	"syscall"
 	"time"
+
+	"github.com/sirupsen/logrus"
 
 	imagev1 "github.com/openshift/api/image/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -111,12 +114,26 @@ func runImageExtract(image, src, dst string, dockerConfigJsonPath string) error 
 	maxRetries := 6
 	startTime := time.Now()
 	logrus.Infof("Run image extract for release image %q and src %q", image, src)
+
+	// Create a context that listens for SIGINT (Ctrl+C)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	// Listen for interrupt signals
+	signalChan := make(chan os.Signal, 1)
+	signal.Notify(signalChan, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-signalChan
+		logrus.Warn("Received interrupt signal, canceling command...")
+		cancel()
+	}()
+
 	for i := 1; i <= maxRetries; i++ {
 		args := []string{"--kubeconfig=" + util.KubeConfigPath(), "image", "extract", image, fmt.Sprintf("--path=%s:%s", src, dst), "--confirm"}
 		if len(dockerConfigJsonPath) > 0 {
 			args = append(args, fmt.Sprintf("--registry-config=%s", dockerConfigJsonPath))
 		}
-		cmd := exec.Command("oc", args...)
+		cmd := exec.CommandContext(ctx, "oc", args...)
 		out, err = cmd.CombinedOutput()
 		if err != nil {
 			// Allow retries for up to one minute. The openshift internal registry
